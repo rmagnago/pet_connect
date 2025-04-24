@@ -2,18 +2,18 @@
 
 export default function Home() {
   return (
-    <main className="bg-[#2CB8A4] text-white font-sans min-h-screen">
+    <main className="bg-[#2CB8A4] text-white font-sans min-h-screen flex flex-col">
       {/* Navbar */}
       <header className="bg-red-50 text-[#046C5E] flex justify-between items-center px-6 py-4 shadow">
         <div className="flex items-center gap-3">
           <img src="/icon.png" alt="Logo PetConnect" className="w-16 h-16" />
           <h1 className="text-xl font-bold text-[#195245]">PetConnect</h1>
         </div>
-        <nav className="flex gap-4 text-sm">
-          <a href="#" className="hover:underline">
+        <nav className="flex gap-4 text-sm items-center">
+          <a href="/register" className="hover:underline">
             Criar perfil
           </a>
-          <a href="#" className="hover:underline">
+          <a href="/login" className="hover:underline">
             Entrar
           </a>
           <a
@@ -26,7 +26,7 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="text-center py-16 px-6">
+      <section className="text-center py-16 px-6 flex-grow">
         <h2 className="text-3xl md:text-4xl font-semibold mb-4">
           Agende a consulta do seu melhor amigo
         </h2>
@@ -35,30 +35,23 @@ export default function Home() {
         </p>
 
         <div className="bg-[#1F8F81] p-6 rounded-xl max-w-4xl mx-auto shadow-lg">
-          {/* Botões de Local/Web */}
-          <div className="flex justify-center gap-4 mb-4">
-            <button className="bg-white text-[#046C5E] px-4 py-2 rounded-full">
-              Local
-            </button>
-            <button className="bg-white/50 text-white px-4 py-2 rounded-full">
-              Web
-            </button>
-            <div className="border-2 border-dark p-4">Borda com a cor dark</div>
-          </div>
-
+          
           {/* Barra de busca */}
           <div className="flex flex-col md:flex-row gap-4">
             <input
               type="text"
               placeholder="especialidade, doença ou nome"
-              className="p-3 rounded w-full text-black"
+              className="p-3 rounded w-full text-[#195245] bg-white"
             />
             <input
               type="text"
               placeholder="cidade ou região"
-              className="p-3 rounded w-full text-black"
+              className="p-3 rounded w-full text-[#195245] bg-white"
             />
-            <button className="bg-[#046C5E] px-6 py-3 rounded text-white hover:bg-[#03584d]">
+            <button 
+            className="bg-[#046C5E] px-6 py-3 rounded text-white hover:bg-[#03584d]"
+            onClick={() => window.location.href = "/busca"}
+            >
               Pesquisar
             </button>
           </div>
