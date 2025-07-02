@@ -1,14 +1,9 @@
+import TopbarLogin from "@/components/topBarLogin";
+
 export default function Login() {
     return (
       <div className="min-h-screen bg-[#C5E5E3] flex flex-col">
-        {/* Cabeçalho */}
-        <header className="bg-teal-700 text-white flex justify-between items-center px-8 py-6">
-          <h1 className="text-3xl font-bold">PetConnect</h1>
-          <div>
-            <span className="text-sm mr-2">Ainda não tem uma conta?</span>
-            <a href="/register" className="font-semibold underline hover:text-gray-100">Criar conta</a>
-          </div>
-        </header>
+         <TopbarLogin/>
   
         {/* Formulário de login */}
         <main className="flex flex-1 justify-center items-center px-4 py-12">
@@ -39,7 +34,7 @@ export default function Login() {
               </button>
             </form>
             <p className="text-center text-sm text-teal-700 mt-4">
-              Esqueceu sua senha? <a href="#" className="underline font-medium">Recuperar</a>
+              <a href="#" className="underline font-medium">Esqueci minha senha</a>
             </p>
           </div>
         </main>

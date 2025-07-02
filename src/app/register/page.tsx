@@ -1,16 +1,9 @@
-export default function Novo() {
+import { TopbarRegister } from "@/components/topBarRegister";
+
+export default function RegisterAccount() {
     return (
       <div className="min-h-screen bg-[#C5E5E3] text-teal-800">
-        {/* Cabeçalho */}
-        <header className="flex items-center justify-between px-8 py-6 bg-white">
-          <h1 className="text-3xl font-bold">PetConnect</h1>
-          <div>
-            <span className="text-sm text-teal-600">Você já possui uma conta?</span>
-            <a href="/login" className="ml-2 font-semibold text-teal-700 hover:underline">
-              Entrar
-            </a>
-          </div>
-        </header>
+       <TopbarRegister />
   
         {/* Conteúdo */}
         <main className="flex flex-col items-center justify-center mt-16 px-4">
