@@ -7,7 +7,7 @@ export default function TopbarLogin() {
                 </h1>
                 <div>
                     <span className="text-sm mr-2">Ainda não tem uma conta?</span>
-                    <a href="/register" className="font-semibold underline hover:text-gray-100">Criar conta</a>
+                    <a href="/register/tutor" className="font-semibold underline hover:text-gray-100">Criar conta</a>
                 </div>
             </header>
         </div>

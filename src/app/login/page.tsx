@@ -5,8 +5,7 @@ export default function Login() {
       <div className="min-h-screen bg-[#C5E5E3] flex flex-col">
          <TopbarLogin/>
   
-        {/* Formulário de login */}
-        <main className="flex flex-1 justify-center items-center px-4 py-12">
+        <div className="flex flex-1 justify-center items-center px-4 py-12">
           <div className="bg-white rounded-md shadow-lg p-8 w-full max-w-md">
             <h2 className="text-2xl font-semibold text-teal-800 mb-6 text-center">Entrar na sua conta</h2>
             <form className="space-y-5">
@@ -15,7 +14,7 @@ export default function Login() {
                 <input
                   type="email"
                   placeholder="seuemail@email.com"
-                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  className="w-full p-3 border rounded-md focus:ring-2 placeholder:text-gray-300"
                 />
               </div>
               <div>
@@ -23,7 +22,7 @@ export default function Login() {
                 <input
                   type="password"
                   placeholder="********"
-                  className="w-full p-3 border rounded-md focus:outline-none focus:ring-2 focus:ring-teal-400"
+                  className="w-full p-3 border rounded-md focus:ring-2 placeholder:text-gray-300"
                 />
               </div>
               <button
@@ -34,10 +33,10 @@ export default function Login() {
               </button>
             </form>
             <p className="text-center text-sm text-teal-700 mt-4">
-              <a href="#" className="underline font-medium">Esqueci minha senha</a>
+              <a href="/forgotPassword" className="underline font-medium">Esqueci minha senha</a>
             </p>
           </div>
-        </main>
+        </div>
       </div>
     );
   }
