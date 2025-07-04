@@ -1,16 +1,10 @@
+import { TopbarRegister } from "@/components/topBarRegister";
 import React from "react";
 
 export default function Busca() {
     return (
       <div className="min-h-screen bg-[#C5E5E3] text-teal-900">
-        {/* Cabeçalho */}
-        <header className="bg-teal-700 text-white flex justify-between items-center px-8 py-6">
-          <h1 className="text-3xl font-bold">PetConnect</h1>
-          <div>
-            <span className="text-sm mr-2">Você já possui uma conta?</span>
-            <a href="/login" className="font-semibold underline hover:text-gray-100">Entrar</a>
-          </div>
-        </header>
+      <TopbarRegister />
   
         {/* Filtros */}
         <div className="flex flex-wrap gap-4 justify-center px-4 py-8 bg-[#E1F0EF]">
