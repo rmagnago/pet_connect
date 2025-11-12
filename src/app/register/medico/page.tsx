@@ -1,10 +1,12 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { TopbarRegister } from "@/components/topBarRegister";
 import medicoService from "@/services/medicoService";
 
 export default function RegisterMedico() {
+  const router = useRouter();
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
@@ -56,6 +58,7 @@ export default function RegisterMedico() {
       await medicoService.create(payload as any);
       alert("Médico cadastrado com sucesso.");
       form.reset();
+      router.push("/login")
     } catch (error: any) {
       // Log detalhado para identificar a causa (400/500/validation/db/etc)
       if (error.response) {
