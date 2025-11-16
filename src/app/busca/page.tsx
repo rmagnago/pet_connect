@@ -1,10 +1,30 @@
+'use client';
+
+import TopbarLogadoBusca from "@/components/topBarLogadoBusca";
 import { TopbarRegister } from "@/components/topBarRegister";
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 export default function Busca() {
+    const [isLogged, setIsLogged] = useState<boolean | null>(null);
+  
+    useEffect(() => {
+      try {
+        const raw = localStorage.getItem("user");
+        if (raw) {
+          const user = JSON.parse(raw);
+          if (user) {
+            setIsLogged(true);
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Erro ao verificar usuário no localStorage", e);
+      }
+      setIsLogged(false);
+    }, []);
     return (
       <div className="min-h-screen bg-[#C5E5E3] text-teal-900">
-      <TopbarRegister />
+      {isLogged === null ? null : isLogged ? <TopbarLogadoBusca /> : <TopbarRegister />}
   
         {/* Filtros */}
         <div className="flex flex-wrap gap-4 justify-center px-4 py-8 bg-[#E1F0EF]">

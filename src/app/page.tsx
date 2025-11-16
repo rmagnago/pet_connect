@@ -1,12 +1,32 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
 import { FooterHome } from "@/components/footerHome";
 import { TopBarHome } from "@/components/topBarHome";
+import TopbarLogado from "@/components/topBarLogado";
 
 export default function Home() {
+  const [isLogged, setIsLogged] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const user = JSON.parse(raw);
+        if (user) {
+          setIsLogged(true);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error("Erro ao verificar usuário no localStorage", e);
+    }
+    setIsLogged(false);
+  }, []);
+
   return (
     <div className="bg-[#2CB8A4] text-white font-sans min-h-screen flex flex-col">
-      <TopBarHome />
+      {isLogged === null ? null : isLogged ? <TopbarLogado /> : <TopBarHome />}
 
       {/* Main area */}
       <section className="text-center py-16 px-6 flex-grow">
@@ -32,7 +52,7 @@ export default function Home() {
             />
             <button
               className="bg-[#046C5E] px-6 py-3 rounded text-white hover:bg-[#03584d]"
-              onClick={() => window.location.href = "/busca"}
+              onClick={() => (window.location.href = "/busca")}
             >
               Pesquisar
             </button>

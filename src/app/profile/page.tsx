@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { TopBarHome } from '@/components/topBarHome';
 import medicoService from '@/services/medicoService';
 import tutorService from '@/services/tutorService';
+import { TopBarVazio } from '@/components/topBarVazio';
 
 type UserStorage = {
   role: 'MEDICO' | 'TUTOR';
@@ -102,7 +103,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-[#C5E5E3] text-teal-800">
-      <TopBarHome />
+      <TopBarVazio />
       <div className="flex flex-col items-center justify-center mt-8 px-4">
         <h2 className="text-2xl font-bold mb-6">Meu Perfil</h2>
         <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-3xl">
