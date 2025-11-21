@@ -90,7 +90,7 @@ export default function Busca() {
             const endereco = (m && ((m.endereco) || (m.address))) || '';
             const nome = (m && (m.nome || m.name)) || 'Médico';
             const especialidade = (m && (m.especialidade?.nome || m.especialidade || m.especialidadeId)) || '';
-            const geoc = await geocodeAddress(endereco ? `${endereco}, Colatina, ES` : 'Colatina, ES');
+            const geoc = await geocodeAddress(endereco ? `${endereco}` : 'Colatina, ES');
             if (geoc) {
               results.push({
                 id: m.id,
