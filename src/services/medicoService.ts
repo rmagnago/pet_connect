@@ -7,6 +7,9 @@ export interface Medico {
   telefone: string;
   crm: string;
   especialidadeId: number;
+  endereco: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export const medicoService = {

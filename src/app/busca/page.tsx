@@ -4,11 +4,19 @@ import TopbarLogadoBusca from "@/components/topBarLogadoBusca";
 import { TopbarRegister } from "@/components/topBarRegister";
 import React, { useEffect, useRef, useState } from "react";
 import medicoService from '@/services/medicoService';
+import agendamentoService from '@/services/agendamentoService';
 
 export default function Busca() {
   const [isLogged, setIsLogged] = useState<boolean | null>(null);
+  const [userRole, setUserRole] = useState<'MEDICO' | 'TUTOR' | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
+  // médicos carregados (sem marcadores)
+  const [medicosList, setMedicosList] = useState<Array<any>>([]);
+  // marcadores adicionados sob demanda
   const [markers, setMarkers] = useState<Array<any>>([]);
-  const [mapCenter, setMapCenter] = useState<[number, number]>([ -20.1697, -40.6004 ]); // default Colatina-ish
+  // card selecionado (para destacar visualmente)
+  const [selectedMedicoId, setSelectedMedicoId] = useState<number | string | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([-19.5320, -40.6240]); // Colatina, ES
   const [loadingMarkers, setLoadingMarkers] = useState(false);
   const mapRef = useRef<any>(null);
   const mapDivRef = useRef<HTMLDivElement | null>(null);
@@ -22,6 +30,8 @@ export default function Busca() {
           const user = JSON.parse(raw);
           if (user) {
             setIsLogged(true);
+            setUserRole(user.role ?? null);
+            setUserId(user.id ?? null);
             return;
           }
         }
@@ -53,7 +63,7 @@ export default function Busca() {
       return () => { mounted = false; };
     }, []);
 
-    // Função simples de geocoding usando Nominatim (OpenStreetMap)
+    // Geocoding usando Nominatim (OpenStreetMap) com cache
     async function geocodeAddress(address: string) {
       if (!address) return null;
       try {
@@ -76,7 +86,7 @@ export default function Busca() {
       return null;
     }
 
-    // Busca médicos do backend, geocodifica endereços e cria marcadores
+    // Busca médicos do backend (não cria marcadores aqui)
     useEffect(() => {
       let mounted = true;
       async function loadMedicos() {
@@ -84,29 +94,8 @@ export default function Busca() {
         try {
           const resp = await medicoService.getAll();
           const medicos = (resp.data || []) as any[];
-          const results: Array<any> = [];
-
-          for (const m of medicos) {
-            const endereco = (m && ((m.endereco) || (m.address))) || '';
-            const nome = (m && (m.nome || m.name)) || 'Médico';
-            const especialidade = (m && (m.especialidade?.nome || m.especialidade || m.especialidadeId)) || '';
-            const geoc = await geocodeAddress(endereco ? `${endereco}` : 'Colatina, ES');
-            if (geoc) {
-              results.push({
-                id: m.id,
-                nome,
-                especialidade,
-                endereco,
-                position: [geoc.lat, geoc.lon] as [number, number],
-              });
-            }
-          }
-
           if (mounted) {
-            setMarkers(results);
-            if (results.length > 0) {
-              setMapCenter(results[0].position);
-            }
+            setMedicosList(medicos);
           }
         } catch (e) {
           console.error('Erro ao carregar médicos', e);
@@ -125,11 +114,24 @@ export default function Busca() {
       if (mapRef.current) return; // já inicializado
 
       const L = leafletRef.current;
+      // garante CSS do Leaflet
+      if (typeof window !== 'undefined') {
+        const id = 'leaflet-css';
+        if (!document.getElementById(id)) {
+          const link = document.createElement('link');
+          link.id = id;
+          link.rel = 'stylesheet';
+          link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+          document.head.appendChild(link);
+        }
+      }
       mapRef.current = L.map(mapDivRef.current).setView(mapCenter, 13);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; OpenStreetMap contributors'
       }).addTo(mapRef.current);
       markersLayerRef.current = L.layerGroup().addTo(mapRef.current);
+      // corrige layout ao montar o mapa
+      setTimeout(() => { try { mapRef.current?.invalidateSize(); } catch {} }, 0);
 
       return () => {
         if (mapRef.current) {
@@ -140,19 +142,17 @@ export default function Busca() {
       };
     }, [leafletRef.current, mapDivRef.current]);
 
-    // Atualiza marcadores quando mudam
+    // Atualiza marcadores quando mudam e ajusta bounds para caber todos
     useEffect(() => {
       if (!mapRef.current || !markersLayerRef.current || !leafletRef.current) return;
       const L = leafletRef.current;
       markersLayerRef.current.clearLayers();
-      for (const m of markers) {
-        const mk = L.marker(m.position as any);
-        mk.bindPopup(`<strong>${m.nome}</strong><div>${m.especialidade}</div><div style="font-size:12px;margin-top:6px;">${m.endereco}</div>`);
-        mk.addTo(markersLayerRef.current);
-      }
+      // Exibe apenas um pin (o último selecionado)
       if (markers.length > 0) {
-        const first = markers[0].position as [number, number];
-        mapRef.current.setView(first, 13);
+        const m = markers[markers.length - 1];
+        const mk = L.marker(m.position as any);
+        mk.bindPopup(`<strong>${m.nome}</strong><div>${m.especialidade ?? ''}</div><div style=\"font-size:12px;margin-top:6px;\">${m.endereco ?? ''}</div>`);
+        mk.addTo(markersLayerRef.current);
       }
     }, [markers, leafletRef.current]);
 
@@ -181,26 +181,83 @@ export default function Busca() {
 
         {/* Resultados e mapa */}
         <div className="flex flex-col lg:flex-row gap-6 px-6 pb-10">
-          {/* Lista de médicos */}
-          <div className="flex-1 space-y-6">
-            {markers.length === 0 && !loadingMarkers ? (
-              <div className="p-6 bg-white rounded-md shadow">Nenhum médico com localização encontrada.</div>
+          {/* Lista de médicos (scroll independente) */}
+          <div className="flex-1">
+            <div className="space-y-6 overflow-y-auto pr-2" style={{ maxHeight: 'calc(100vh - 220px)' }}>
+            {medicosList.length === 0 && !loadingMarkers ? (
+              <div className="p-6 bg-white rounded-md shadow">Nenhum médico encontrado.</div>
             ) : (
-              markers.map((m, idx) => (
-                <div key={m.id || idx} className="bg-white rounded-md p-6 flex gap-6 items-start shadow-md">
+              medicosList.map((m, idx) => (
+                <div
+                  key={m.id || idx}
+                  className={`bg-white rounded-md p-6 flex gap-6 items-start shadow-md border transition-colors ${
+                    (m.id ?? idx) === selectedMedicoId
+                      ? 'border-teal-600 ring-2 ring-teal-300 bg-teal-50'
+                      : 'border-transparent hover:border-teal-200'
+                  }`}
+                  aria-selected={(m.id ?? idx) === selectedMedicoId}
+                >
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-teal-800">{m.nome}</h3>
-                    <p className="text-sm text-teal-700">{m.especialidade}</p>
-                    <p className="text-sm mt-2"><strong>Endereço:</strong> {m.endereco}</p>
+                    <h3 className="text-lg font-semibold text-teal-800">{m.nome || 'Médico'}</h3>
+                    <p className="text-sm text-teal-700">Cardiologia</p>
+                    <p className="text-sm text-teal-700 font-bold">Nota: {m.nota ?? ''}</p>
+                    <p className="text-sm mt-2"><strong>Endereço:</strong> {m.endereco || ''}</p>
                   </div>
-                  <div className="min-w-[200px] text-sm text-center">
-                    <button className="p-2 bg-teal-600 text-white rounded" onClick={() => setMapCenter(m.position)}>
+                  <div className="min-w-[220px] text-sm text-center flex flex-col gap-2">
+                    <button
+                      className="p-2 bg-teal-600 text-white rounded"
+                      onClick={async () => {
+                        // ao clicar, cria marcador (usando coords do backend ou geocoding)
+                        let lat = (m.latitude ?? m.lat ?? null);
+                        let lon = (m.longitude ?? m.lon ?? null);
+                        if (!(typeof lat === 'number' && typeof lon === 'number')) {
+                          const geo = await geocodeAddress(m.endereco ? `${m.endereco}` : 'Colatina, ES');
+                          if (geo) { lat = geo.lat; lon = geo.lon; }
+                        }
+                        if (typeof lat === 'number' && typeof lon === 'number') {
+                          const newMarker = {
+                            id: m.id,
+                            nome: m.nome || 'Médico',
+                            especialidade: m.especialidade?.nome || m.especialidade || '',
+                            endereco: m.endereco || '',
+                            position: [lat, lon] as [number, number],
+                          };
+                          // substitui o pin anterior por um novo
+                          setMarkers([newMarker]);
+                          setMapCenter([lat, lon]);
+                          setSelectedMedicoId(m.id ?? idx);
+                        }
+                      }}
+                    >
                       Ver no mapa
                     </button>
+                    {isLogged && userRole === 'TUTOR' && (
+                      <button
+                        className="p-2 bg-teal-700 text-white rounded"
+                        onClick={async () => {
+                          if (!userId) return;
+                          try {
+                            await agendamentoService.solicitar({
+                              status: false,
+                              medico: { id: m.id },
+                              tutor: { id: userId },
+                              pet: null,
+                            });
+                            alert('Solicitação de consulta enviada para o médico.');
+                          } catch (e: any) {
+                            console.error('Erro ao solicitar consulta', e);
+                            alert('Falha ao solicitar consulta.');
+                          }
+                        }}
+                      >
+                        Marcar consulta
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
             )}
+            </div>
           </div>
 
           {/* Mapa */}

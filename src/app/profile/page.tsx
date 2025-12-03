@@ -6,6 +6,8 @@ import { TopBarHome } from '@/components/topBarHome';
 import medicoService from '@/services/medicoService';
 import tutorService from '@/services/tutorService';
 import { TopBarVazio } from '@/components/topBarVazio';
+import agendamentoService from '@/services/agendamentoService';
+import avaliacaoService from '@/services/avaliacaoService';
 
 type UserStorage = {
   role: 'MEDICO' | 'TUTOR';
@@ -25,6 +27,9 @@ export default function Profile() {
   const [telefone, setTelefone] = useState('');
   const [endereco, setEndereco] = useState('');
   const [extra, setExtra] = useState(''); // crmv or cpf (read-only)
+  const [agendamentos, setAgendamentos] = useState<any[]>([]);
+  const [notaSelecionada, setNotaSelecionada] = useState<Record<number, number>>({});
+  const [agendamentosMedico, setAgendamentosMedico] = useState<any[]>([]);
 
   useEffect(() => {
     const raw = localStorage.getItem('user');
@@ -44,6 +49,10 @@ export default function Profile() {
           setTelefone(m.telefone || '');
           setEndereco(m.endereco || '');
           setExtra(m.crmv || '');
+          // Carregar solicitações para o médico
+          agendamentoService.getByMedico(parsed.id).then(r => {
+            setAgendamentosMedico(r.data || []);
+          }).catch(err => console.error('Erro ao listar consultas do médico', err));
           setLoading(false);
         }).catch(err => {
           console.error('Erro ao carregar médico', err);
@@ -57,6 +66,10 @@ export default function Profile() {
           setTelefone(t.telefone || '');
           setEndereco(t.endereco || '');
           setExtra(t.cpf || '');
+          // Carregar agendamentos do tutor
+          agendamentoService.getByTutor(parsed.id).then(r => {
+            setAgendamentos(r.data || []);
+          }).catch(err => console.error('Erro ao listar consultas do tutor', err));
           setLoading(false);
         }).catch(err => {
           console.error('Erro ao carregar tutor', err);
@@ -135,6 +148,95 @@ export default function Profile() {
             </div>
           </form>
         </div>
+          {user?.role === 'TUTOR' && (
+          <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-3xl mt-6">
+            <h3 className="text-xl font-semibold mb-4">Minhas Consultas</h3>
+            {agendamentos.length === 0 ? (
+              <div className="text-sm text-teal-700">Nenhuma consulta encontrada.</div>
+            ) : (
+              <div className="space-y-4">
+                {agendamentos.map((ag: any) => (
+                  <div key={ag.id} className="border rounded p-4 flex items-center justify-between">
+                    <div className="text-sm">
+                      <div><strong>ID:</strong> {ag.id}</div>
+                      <div><strong>Médico:</strong> {ag.medico?.nome ?? ag.medico?.id ?? '-'}</div>
+                      <div><strong>Status:</strong> {ag.status ? 'Aceita' : 'Pendente'}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <select
+                        className="border rounded p-2"
+                        value={notaSelecionada[ag.id] ?? 5}
+                        onChange={(e) => setNotaSelecionada(prev => ({ ...prev, [ag.id]: Number(e.target.value) }))}
+                        disabled={!ag.status}
+                      >
+                        {[1,2,3,4,5].map(n => (
+                          <option key={n} value={n}>{n}</option>
+                        ))}
+                      </select>
+                      <button
+                        className="bg-teal-700 text-white py-2 px-4 rounded"
+                        disabled={!ag.status}
+                        onClick={async () => {
+                          const nota = notaSelecionada[ag.id] ?? 5;
+                          try {
+                            await avaliacaoService.avaliarAgendamento(ag.id, { nota });
+                            alert('Avaliação registrada.');
+                          } catch (err) {
+                            console.error('Erro ao avaliar', err);
+                            alert('Falha ao avaliar consulta.');
+                          }
+                        }}
+                      >
+                        Avaliar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+          {user?.role === 'MEDICO' && (
+            <div className="bg-white rounded-lg shadow-md p-8 w-full max-w-3xl mt-6">
+              <h3 className="text-xl font-semibold mb-4">Solicitações de Consultas</h3>
+              {agendamentosMedico.length === 0 ? (
+                <div className="text-sm text-teal-700">Nenhuma solicitação encontrada.</div>
+              ) : (
+                <div className="space-y-4">
+                  {agendamentosMedico.map((ag: any) => (
+                    <div key={ag.id} className="border rounded p-4 flex items-center justify-between">
+                      <div className="text-sm">
+                        <div><strong>ID:</strong> {ag.id}</div>
+                        <div><strong>Tutor:</strong> {ag.tutor?.nome ?? ag.tutor?.id ?? '-'}</div>
+                        <div><strong>Status:</strong> {ag.status ? 'Aceita' : 'Pendente'}</div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="bg-teal-700 text-white py-2 px-4 rounded"
+                          disabled={ag.status}
+                          onClick={async () => {
+                            try {
+                              await agendamentoService.aceitar(ag.id);
+                              // atualiza lista
+                              const res = await agendamentoService.getByMedico(user!.id);
+                              setAgendamentosMedico(res.data || []);
+                              alert('Consulta aceita.');
+                            } catch (err) {
+                              console.error('Erro ao aceitar consulta', err);
+                              alert('Falha ao aceitar consulta.');
+                            }
+                          }}
+                        >
+                          Aceitar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
       </div>
     </div>
   );
