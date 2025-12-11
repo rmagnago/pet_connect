@@ -44,15 +44,24 @@ export default function Home() {
               type="text"
               placeholder="especialidade, doença ou nome"
               className="p-3 rounded w-full text-[#195245] bg-white"
+              id="especialidade-input"
             />
             <input
               type="text"
               placeholder="cidade ou região"
               className="p-3 rounded w-full text-[#195245] bg-white"
+              id="cidade-input"
             />
             <button
               className="bg-[#046C5E] px-6 py-3 rounded text-white hover:bg-[#03584d]"
-              onClick={() => (window.location.href = "/busca")}
+              onClick={() => {
+                const especialidade = (document.getElementById('especialidade-input') as HTMLInputElement)?.value || '';
+                const cidade = (document.getElementById('cidade-input') as HTMLInputElement)?.value || '';
+                const params = new URLSearchParams();
+                if (especialidade) params.append('especialidade', especialidade);
+                if (cidade) params.append('cidade', cidade);
+                window.location.href = `/busca${params.toString() ? '?' + params.toString() : ''}`;
+              }}
             >
               Pesquisar
             </button>

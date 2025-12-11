@@ -9,6 +9,22 @@ const api = axios.create({
   },
 });
 
+// Interceptor para logar requisições
+api.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', {
+      method: config.method,
+      url: config.url,
+      params: config.params,
+      data: config.data
+    });
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Interceptor para tratar erros globalmente
 api.interceptors.response.use(
   (response) => response,

@@ -4,6 +4,7 @@ import TopbarLogadoBusca from "@/components/topBarLogadoBusca";
 import { TopbarRegister } from "@/components/topBarRegister";
 import React, { useEffect, useRef, useState } from "react";
 import medicoService from '@/services/medicoService';
+import especialidadeService from '@/services/especialidadeService';
 import agendamentoService from '@/services/agendamentoService';
 
 export default function Busca() {
@@ -18,6 +19,9 @@ export default function Busca() {
   const [selectedMedicoId, setSelectedMedicoId] = useState<number | string | null>(null);
   const [mapCenter, setMapCenter] = useState<[number, number]>([-19.5320, -40.6240]); // Colatina, ES
   const [loadingMarkers, setLoadingMarkers] = useState(false);
+  const [especialidades, setEspecialidades] = useState<Array<any>>([]);
+  const [filtroEspecialidade, setFiltroEspecialidade] = useState<string>('');
+  const [filtroCidade, setFiltroCidade] = useState<string>('');
   const mapRef = useRef<any>(null);
   const mapDivRef = useRef<HTMLDivElement | null>(null);
   const markersLayerRef = useRef<any>(null);
@@ -41,6 +45,18 @@ export default function Busca() {
       setIsLogged(false);
     }, []);
 
+    // Carrega parâmetros de URL
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const especialidade = params.get('especialidade');
+        const cidade = params.get('cidade');
+        
+        if (especialidade) setFiltroEspecialidade(especialidade);
+        if (cidade) setFiltroCidade(cidade);
+      }
+    }, []);
+
     // Carrega Leaflet dinamicamente no cliente e ajusta ícones
     useEffect(() => {
       let mounted = true;
@@ -60,6 +76,23 @@ export default function Busca() {
           console.error('Erro carregando leaflet dinamicamente', e);
         }
       })();
+      return () => { mounted = false; };
+    }, []);
+
+    // Carrega especialidades
+    useEffect(() => {
+      let mounted = true;
+      async function loadEspecialidades() {
+        try {
+          const resp = await especialidadeService.getAll();
+          if (mounted) {
+            setEspecialidades(resp.data || []);
+          }
+        } catch (e) {
+          console.error('Erro ao carregar especialidades', e);
+        }
+      }
+      loadEspecialidades();
       return () => { mounted = false; };
     }, []);
 
@@ -86,25 +119,44 @@ export default function Busca() {
       return null;
     }
 
-    // Busca médicos do backend (não cria marcadores aqui)
-    useEffect(() => {
+    // Busca médicos do backend com filtros
+    async function buscarMedicos() {
       let mounted = true;
-      async function loadMedicos() {
-        setLoadingMarkers(true);
-        try {
-          const resp = await medicoService.getAll();
-          const medicos = (resp.data || []) as any[];
-          if (mounted) {
-            setMedicosList(medicos);
-          }
-        } catch (e) {
-          console.error('Erro ao carregar médicos', e);
-        } finally {
-          setLoadingMarkers(false);
+      setLoadingMarkers(true);
+      try {
+        let resp;
+        const especId = filtroEspecialidade ? parseInt(filtroEspecialidade) : undefined;
+        const cidade = filtroCidade?.trim() || undefined;
+        
+        console.log('Filtros aplicados:', { nome: undefined, especId, cidade });
+        
+        if (especId || cidade) {
+          // Usa filtros
+          resp = await medicoService.buscarComFiltros(undefined, especId, cidade);
+        } else {
+          // Carrega todos
+          resp = await medicoService.getAll();
         }
+        
+        console.log('Resposta do backend:', resp);
+        
+        if (mounted) {
+          const medicos = resp?.data;
+          setMedicosList(Array.isArray(medicos) ? medicos : []);
+        }
+      } catch (e) {
+        console.error('Erro ao buscar médicos', e);
+        if (mounted) {
+          setMedicosList([]);
+        }
+      } finally {
+        setLoadingMarkers(false);
       }
-      loadMedicos();
-      return () => { mounted = false; };
+    }
+
+    // Carrega médicos inicialmente
+    useEffect(() => {
+      buscarMedicos();
     }, []);
 
     // Inicializa o mapa Leaflet diretamente (apenas depois do carregamento dinamico do leaflet)
@@ -168,13 +220,29 @@ export default function Busca() {
 
         {/* Filtros */}
         <div className="flex flex-wrap gap-4 justify-center px-4 py-8 bg-[#E1F0EF]">
-          <select className="p-3 rounded-md bg-white border min-w-[200px]">
-            <option>Cardiologia</option>
+          <select 
+            className="p-3 rounded-md bg-white border min-w-[200px]"
+            value={filtroEspecialidade}
+            onChange={(e) => setFiltroEspecialidade(e.target.value)}
+          >
+            <option value="">Todas as especialidades</option>
+            {especialidades.map((esp) => (
+              <option key={esp.id} value={esp.id}>
+                {esp.nome}
+              </option>
+            ))}
           </select>
-          <select className="p-3 rounded-md bg-white border min-w-[200px]">
-            <option>Colatina, ES</option>
-          </select>
-          <button className="p-3 rounded-md bg-white border">
+          <input
+            type="text"
+            placeholder="Cidade ou região"
+            className="p-3 rounded-md bg-white border min-w-[200px]"
+            value={filtroCidade}
+            onChange={(e) => setFiltroCidade(e.target.value)}
+          />
+          <button 
+            className="p-3 rounded-md bg-white border hover:bg-gray-100"
+            onClick={buscarMedicos}
+          >
             🔍
           </button>
         </div>
@@ -199,9 +267,10 @@ export default function Busca() {
                 >
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-teal-800">{m.nome || 'Médico'}</h3>
-                    <p className="text-sm text-teal-700">Cardiologia</p>
+                    <p className="text-sm text-teal-700">{m.especialidade?.nome || 'Especialidade não informada'}</p>
                     <p className="text-sm text-teal-700 font-bold">Nota: {m.nota ?? ''}</p>
                     <p className="text-sm mt-2"><strong>Endereço:</strong> {m.endereco || ''}</p>
+                    {m.cidade && <p className="text-sm"><strong>Cidade:</strong> {m.cidade}</p>}
                   </div>
                   <div className="min-w-[220px] text-sm text-center flex flex-col gap-2">
                     <button

@@ -3,12 +3,18 @@ import api from './apiClient';
 export interface Especialidade {
   id?: number;
   nome: string;
-  descricao: string;
+  medicos?: Array<{
+    id: number;
+    nome: string;
+    email: string;
+    endereco: string;
+  }>;
 }
 
 export const especialidadeService = {
   getAll: () => api.get<Especialidade[]>('/especialidades'),
   getById: (id: number) => api.get<Especialidade>(`/especialidades/${id}`),
+  getMedicosByEspecialidade: (id: number) => api.get<any[]>(`/especialidades/${id}/medicos`),
   create: (especialidade: Omit<Especialidade, 'id'>) => api.post<Especialidade>('/especialidades', especialidade),
   update: (id: number, especialidade: Omit<Especialidade, 'id'>) => api.put<Especialidade>(`/especialidades/${id}`, especialidade),
   delete: (id: number) => api.delete(`/especialidades/${id}`),
