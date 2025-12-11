@@ -128,11 +128,11 @@ export default function Busca() {
         const especId = filtroEspecialidade ? parseInt(filtroEspecialidade) : undefined;
         const cidade = filtroCidade?.trim() || undefined;
         
-        console.log('Filtros aplicados:', { nome: undefined, especId, cidade });
+        console.log('Filtros aplicados:', { especialidadeId: especId, cidade });
         
         if (especId || cidade) {
           // Usa filtros
-          resp = await medicoService.buscarComFiltros(undefined, especId, cidade);
+          resp = await medicoService.buscarComFiltros(especId, cidade);
         } else {
           // Carrega todos
           resp = await medicoService.getAll();

@@ -21,8 +21,8 @@ export const medicoService = {
   getById: (id: number) => api.get<Medico>(`/medicos/${id}`),
   getByEspecialidade: (especialidadeId: number) => api.get<Medico[]>(`/medicos/especialidade/${especialidadeId}`),
   getByCidade: (cidade: string) => api.get<Medico[]>(`/medicos/cidade/${cidade}`),
-  buscarComFiltros: (especialidadeId?: number, especId?: number | undefined, cidade?: string) => 
-    api.get<Medico[]>('/medicos/buscar', { params: {especialidadeId, cidade } }),
+  buscarComFiltros: (especialidadeId?: number, cidade?: string) => 
+    api.get<Medico[]>('/medicos/buscar', { params: { especialidadeId, cidade } }),
   create: (medico: Omit<Medico, 'id'>) => api.post<Medico>('/medicos', medico),
   update: (id: number, medico: Omit<Medico, 'id'>) => api.put<Medico>(`/medicos/${id}`, medico),
   delete: (id: number) => api.delete(`/medicos/${id}`),
